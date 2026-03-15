@@ -1,0 +1,277 @@
+/**
+ * Phlox TreeControl – stylesheet
+ *
+ * Part of phlox/components-tree
+ * https://bitbucket.org/phloxx/components-tree
+ * MIT License
+ *
+ * Design principle: zero hardcoded colors.
+ * All colors inherit from the surrounding CSS framework (Bootstrap, Tailwind,
+ * Foundation, …) via currentColor and color-mix(). Dark mode works automatically.
+ *
+ * Customisable layout variables only:
+ *   --pt-font-size      default: 0.875rem
+ *   --pt-row-height     default: 28px
+ *   --pt-indent-width   default: 20px
+ *   --pt-radius         default: 5px
+ *   --pt-anim-duration  default: 180ms
+ */
+
+/* ── Reset & root ──────────────────────────────────────────────────────── */
+.phlox-tree,
+.phlox-tree *,
+.phlox-tree *::before,
+.phlox-tree *::after {
+    box-sizing: border-box;
+}
+
+.phlox-tree {
+    --pt-font-size      : 0.875rem;
+    --pt-row-height     : 28px;
+    --pt-indent-width   : 26px;   /* step width per nesting level */
+    --pt-line-x         : 32px;   /* position of vertical/horizontal lines within each indent/connector span */
+    --pt-line-overhang  : 16px;   /* how far the horizontal elbow extends right past the connector span */
+    --pt-radius         : 5px;
+    --pt-anim-duration  : 180ms;
+
+    font-size   : var(--pt-font-size);
+    user-select : none;
+    outline     : none;
+    /* color, background, font-family: all inherited from parent */
+}
+
+/* ── Lists ─────────────────────────────────────────────────────────────── */
+.pt-list {
+    list-style : none;
+    margin     : 0;
+    padding    : 0;
+}
+
+/* ── Item ──────────────────────────────────────────────────────────────── */
+.pt-item {
+    position : relative;
+    outline  : none;
+}
+
+.pt-item:focus-visible > .pt-row {
+    outline        : 2px solid currentColor;
+    outline-offset : -2px;
+    border-radius  : var(--pt-radius);
+}
+
+/* ── Row ───────────────────────────────────────────────────────────────── */
+.pt-row {
+    display       : flex;
+    align-items   : center;
+    height        : var(--pt-row-height);
+    padding       : 0 6px;
+    border-radius : var(--pt-radius);
+    cursor        : default;
+    transition    : background var(--pt-anim-duration);
+    position      : relative;
+}
+
+.pt-item:not(.is-disabled) > .pt-row:hover {
+    background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.pt-item.is-selected > .pt-row {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.pt-item.is-selected > .pt-row .pt-label {
+    font-weight: 600;
+}
+
+.pt-item.is-disabled > .pt-row {
+    opacity : 0.4;
+    cursor  : not-allowed;
+}
+
+/* ── Indent guides ─────────────────────────────────────────────────────── */
+.pt-indent {
+    display     : inline-block;
+    width       : var(--pt-indent-width);
+    flex-shrink : 0;
+    align-self  : stretch;
+    position    : relative;
+}
+
+.pt-indent::before {
+    content    : '';
+    position   : absolute;
+    left       : var(--pt-line-x);
+    top        : 0;
+    bottom     : 0;
+    width      : 1px;
+    background : color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.pt-indent::before                                         { display: none; }
+.phlox-tree--lines .pt-indent::before                     { display: block; }
+.phlox-tree--lines .pt-indent[data-has-line="0"]::before  { display: none; }
+
+/* ── Connector span (├─ and └─) ────────────────────────────────────────── */
+.pt-connector {
+    display     : none;
+    flex-shrink : 0;
+    width       : var(--pt-indent-width);
+    align-self  : stretch;
+    position    : relative;
+}
+
+.phlox-tree--lines .pt-connector { display: block; }
+
+.phlox-tree--lines .pt-connector::before {
+    content    : '';
+    position   : absolute;
+    top        : 0;
+    bottom     : 0;
+    left       : var(--pt-line-x);
+    width      : 1px;
+    background : color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.phlox-tree--lines .pt-connector.pt-connector--last::before { bottom: 50%; }
+
+.phlox-tree--lines .pt-connector::after {
+    content    : '';
+    position   : absolute;
+    top        : calc(50% - 0.5px);
+    left       : var(--pt-line-x);
+    right      : calc(-1 * var(--pt-line-overhang));
+    height     : 1px;
+    background : color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* ── Toggle button ─────────────────────────────────────────────────────── */
+.pt-toggle {
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    width           : 20px;
+    height          : 20px;
+    flex-shrink     : 0;
+    border          : 1px solid transparent;
+    background      : transparent;
+    padding         : 0;
+    cursor          : pointer;
+    color           : inherit;
+    opacity         : 1;
+    border-radius   : 3px;
+    position        : relative;
+    z-index         : 1;
+    margin-left     : -4px;
+    margin-right    : 4px;
+    transition      : opacity var(--pt-anim-duration), background var(--pt-anim-duration);
+}
+
+.phlox-tree--lines .pt-toggle:not(.pt-toggle--leaf) {
+    background   : Canvas;
+    border-color : color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.pt-toggle:hover {
+    background : color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.pt-toggle--leaf {
+    background     : transparent;
+    border         : none;
+    opacity        : 1;
+    cursor         : default;
+    pointer-events : none;
+    margin-left    : -4px;
+    margin-right   : 4px;
+}
+
+.pt-toggle__icon {
+    width      : 12px;
+    height     : 12px;
+    transition : transform var(--pt-anim-duration) ease;
+}
+
+.pt-item.is-expanded > .pt-row .pt-toggle__icon { transform: rotate(90deg); }
+
+/* ── Label ─────────────────────────────────────────────────────────────── */
+.pt-label {
+    flex          : 1;
+    min-width     : 0;
+    overflow      : hidden;
+    text-overflow : ellipsis;
+    white-space   : nowrap;
+    margin-left   : 4px;
+    font-weight   : 400;
+    /* color, line-height: inherited */
+}
+
+a.pt-label:hover { text-decoration: underline; }
+
+/* ── Icon ──────────────────────────────────────────────────────────────── */
+.pt-icon {
+    display     : flex;
+    align-items : center;
+    flex-shrink : 0;
+    font-size   : 1em;
+}
+
+/* ── Checkbox ──────────────────────────────────────────────────────────── */
+.pt-checkbox {
+    margin      : 0 6px 0 2px;
+    flex-shrink : 0;
+    cursor      : pointer;
+}
+
+/* ── Children container ────────────────────────────────────────────────── */
+.pt-children { overflow: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .pt-children { transition: height var(--pt-anim-duration) cubic-bezier(0.4, 0, 0.2, 1); }
+}
+
+/* ── Drag & Drop ───────────────────────────────────────────────────────── */
+
+.pt-item.is-dragging { opacity: 0.35; }
+
+.pt-item[data-drop-pos="before"] > .pt-row::before {
+    content        : '';
+    position       : absolute;
+    top            : -1px; left: 0; right: 0;
+    height         : 2px;
+    background     : currentColor;
+    border-radius  : 1px;
+    opacity        : 0.7;
+    pointer-events : none;
+    z-index        : 10;
+}
+
+.pt-item[data-drop-pos="after"] > .pt-row::after {
+    content        : '';
+    position       : absolute;
+    bottom         : -1px; left: 0; right: 0;
+    height         : 2px;
+    background     : currentColor;
+    border-radius  : 1px;
+    opacity        : 0.7;
+    pointer-events : none;
+    z-index        : 10;
+}
+
+.pt-item[data-drop-pos="child"] > .pt-row {
+    background     : color-mix(in srgb, currentColor 12%, transparent);
+    outline        : 2px solid color-mix(in srgb, currentColor 40%, transparent);
+    outline-offset : -2px;
+}
+
+/* ── Loading spinner ───────────────────────────────────────────────────── */
+.pt-spinner {
+    display          : inline-block;
+    width            : 14px; height: 14px;
+    border           : 2px solid color-mix(in srgb, currentColor 20%, transparent);
+    border-top-color : currentColor;
+    border-radius    : 50%;
+    animation        : pt-spin 0.6s linear infinite;
+    margin-left      : 6px;
+    flex-shrink      : 0;
+}
+@keyframes pt-spin { to { transform: rotate(360deg); } }

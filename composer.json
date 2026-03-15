@@ -1,0 +1,47 @@
+{
+    "name": "phlox/components-tree",
+    "description": "Nette Framework Tree UI component \u2013 lazy AJAX loading, drag-and-drop with server persistence, keyboard navigation, Bootstrap 5 theme support.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://bitbucket.org/phloxx/components-tree",
+    "keywords": [
+        "nette",
+        "tree",
+        "control",
+        "component",
+        "ajax",
+        "drag-and-drop",
+        "bootstrap"
+    ],
+    "require": {
+        "php": "^8.1",
+        "nette/application": "^3.1",
+        "nette/database": "^3.1"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "squizlabs/php_codesniffer": "^3.7",
+        "nette/tester": "^2.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phlox\\Components\\Tree\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phlox\\Components\\Tree\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {}
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

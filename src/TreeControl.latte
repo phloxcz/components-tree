@@ -1,0 +1,92 @@
+{**
+ * Phlox TreeControl – template  v2.0
+ *
+ * CSS classes renamed: nette-tree → phlox-tree, nt- → pt-
+ * Added: data-move-url, data-theme
+ *}
+
+<div
+    class="phlox-tree{$cssClass ? ' ' . $cssClass : ''}"
+    id="{$componentId}"
+    role="tree"
+    data-drag-drop="{$dragAndDrop ? 'true' : 'false'}"
+    data-animation="{$animation ? 'true' : 'false'}"
+    data-lazy="{$lazyLoad ? 'true' : 'false'}"
+    data-branch-icon="{$branchIcon}"
+    data-leaf-icon="{$leafIcon}"
+    data-root-icon="{$rootIcon}"
+    {if $selectedNode}data-selected-node="{$selectedNode}"{/if}
+    {if $urlParam}data-url-param="{$urlParam}"{/if}
+    {if $urlPattern}data-url-pattern="{$urlPattern}"{/if}
+    {if $moveUrl}data-move-url="{$moveUrl}"{/if}
+    {if $themeJson !== '{}'}data-theme="{$themeJson}"{/if}
+    data-signal-load-children="{$signalLoadChildren}"
+    data-signal-load-children-batch="{$signalLoadChildrenBatch}"
+    data-signal-ancestor-path="{$signalAncestorPath}"
+>
+    {include #nodeList, nodes: $nodes, depth: 0}
+</div>
+
+
+{define #nodeList}
+<ul class="pt-list" role="{$depth === 0 ? 'tree' : 'group'}" data-depth="{$depth}">
+    {foreach $nodes as $node}
+        {include #node, node: $node, depth: $depth}
+    {/foreach}
+</ul>
+{/define}
+
+
+{define #node}
+<li
+    class="pt-item{$node['expanded'] ? ' is-expanded' : ''}{$node['hasChildren'] ? ' has-children' : ' is-leaf'}{$node['disabled'] ? ' is-disabled' : ''}{$node['isLast'] ? ' is-last' : ''}"
+    data-id="{$node['id']}"
+    data-has-children="{$node['hasChildren'] ? '1' : '0'}"
+    {foreach $node['data'] as $key => $val}data-{$key}="{$val}" {/foreach}
+    role="treeitem"
+    aria-expanded="{$node['hasChildren'] ? ($node['expanded'] ? 'true' : 'false') : null}"
+    aria-selected="false"
+    aria-disabled="{$node['disabled'] ? 'true' : null}"
+    tabindex="0"
+>
+    <div class="pt-row" {$dragAndDrop && !$node['disabled'] ? 'draggable="true"' : ''|noescape}>
+
+        {foreach $node['ancestorFlags'] as $idx => $ancestorIsLast}
+            {if !$loop->first}<span class="pt-indent" data-has-line="{$ancestorIsLast ? '0' : '1'}" aria-hidden="true"></span>{/if}
+        {/foreach}
+
+        <span class="pt-connector{$node['isLast'] ? ' pt-connector--last' : ''}" aria-hidden="true" n:if="$depth > 0"></span>
+
+        <button
+            class="pt-toggle"
+            type="button"
+            aria-label="{$node['expanded'] ? 'Sbalit' : 'Rozbalit'}"
+            tabindex="-1"
+            n:if="$node['hasChildren']"
+        >
+            <svg class="pt-toggle__icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+        <span class="pt-toggle pt-toggle--leaf" n:else></span>
+
+        <input class="pt-checkbox" type="checkbox" n:if="$checkboxes" data-id="{$node['id']}" />
+
+        <span class="pt-icon" n:if="$node['icon']">{$node['icon']|noescape}</span>
+
+        <span class="pt-label">{$node['label']}</span>
+    </div>
+
+    {if $node['expanded']}
+        {if $lazyLoad}
+            <div class="pt-children" data-loaded="false" style="display:block"></div>
+        {else}
+            <div class="pt-children" n:if="$node['children']">
+                {include #nodeList, nodes: $node['children'], depth: $depth + 1}
+            </div>
+        {/if}
+    {elseif $node['hasChildren']}
+        <div class="pt-children" style="display:none" data-loaded="false"></div>
+    {/if}
+</li>
+{/define}
