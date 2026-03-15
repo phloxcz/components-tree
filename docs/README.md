@@ -1,4 +1,4 @@
-# phlox/components-tree
+# phloxcz/components-tree
 
 Nette Framework Tree UI component. Lazy AJAX loading, drag & drop s automatickým rollbackem, klávesová navigace, podpora Bootstrap 5 a libovolného CSS frameworku.
 
@@ -28,14 +28,14 @@ Nette Framework Tree UI component. Lazy AJAX loading, drag & drop s automatický
 ## Instalace
 
 ```bash
-composer require phlox/components-tree
+composer require phloxcz/components-tree
 ```
 
 Do stránky zahrňte assets:
 
 ```html
-<link rel="stylesheet" href="vendor/phlox/components-tree/assets/tree-control.css">
-<script src="vendor/phlox/components-tree/assets/tree-control.js" defer></script>
+<link rel="stylesheet" href="vendor/phloxcz/components-tree/assets/tree-control.css">
+<script src="vendor/phloxcz/components-tree/assets/tree-control.js" defer></script>
 ```
 
 Nebo přes npm / webpack – soubory jsou v `assets/`.

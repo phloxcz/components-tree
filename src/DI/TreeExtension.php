@@ -11,7 +11,7 @@ use Phlox\Components\Tree\TreeControl;
 use Phlox\Components\Tree\TreeControlFactory;
 
 /**
- * Nette DI extension for phlox/components-tree.
+ * Nette DI extension for phloxcz/components-tree.
  *
  * Registration in config.neon:
  *

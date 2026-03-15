@@ -1,9 +1,9 @@
 {
-    "name": "phlox/components-tree",
+    "name": "phloxcz/components-tree",
     "description": "Nette Framework Tree UI component \u2013 lazy AJAX loading, drag-and-drop with server persistence, keyboard navigation, Bootstrap 5 theme support.",
     "type": "library",
     "license": "MIT",
-    "homepage": "https://bitbucket.org/phloxx/components-tree",
+    "homepage": "https://github.com/phloxcz/components-tree",
     "keywords": [
         "nette",
         "tree",

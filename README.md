@@ -1,9 +1,9 @@
-# phlox/components-tree
+# phloxcz/components-tree
 
 Nette Framework TreeControl component. Lazy AJAX loading, drag & drop, keyboard navigation, zero hardcoded colors.
 
 ```bash
-composer require phlox/components-tree
+composer require phloxcz/components-tree
 ```
 
 ## Quick start
@@ -42,8 +42,8 @@ protected function createComponentCategoryTree(): TreeControl
 **Assets:**
 
 ```html
-<link rel="stylesheet" href="vendor/phlox/components-tree/assets/tree-control.css">
-<script src="vendor/phlox/components-tree/assets/tree-control.js" defer></script>
+<link rel="stylesheet" href="vendor/phloxcz/components-tree/assets/tree-control.css">
+<script src="vendor/phloxcz/components-tree/assets/tree-control.js" defer></script>
 ```
 
 **JS events:**
