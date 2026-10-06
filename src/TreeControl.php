@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phlox\Components\Tree;
 
+use Nette\Application\Attributes\Persistent;
 use Nette\Application\UI\Control;
 use Nette\Database\Table\Selection;
 
@@ -16,7 +17,7 @@ class TreeControl extends Control
 
     // ── Persistent state ──────────────────────────────────────────────────────
 
-    /** @persistent */
+    #[Persistent]
     public string $expanded = '';
 
     // ── Configuration ─────────────────────────────────────────────────────────
