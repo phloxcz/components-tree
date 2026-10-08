@@ -866,8 +866,9 @@
             row.insertBefore(sp, firstContent);
         }
 
-        // Re-insert connector — only needed for tree lines
-        if (treeLines && depth > 0) {
+        // Re-insert connector — always for child rows (it is the first indent
+        // step), same as renderNode(); lines are drawn only via CSS
+        if (depth > 0) {
             const conn = document.createElement('span');
             conn.className = 'pt-connector' + (isLast ? ' pt-connector--last' : '');
             conn.setAttribute('aria-hidden', 'true');

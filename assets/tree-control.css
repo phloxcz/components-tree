@@ -112,8 +112,10 @@
 .phlox-tree--lines .pt-indent[data-has-line="0"]::before  { display: none; }
 
 /* ── Connector span (├─ and └─) ────────────────────────────────────────── */
+/* always takes up space: it is the first indentation step of every child
+   row; only the drawn lines (::before/::after) depend on .phlox-tree--lines */
 .pt-connector {
-    display     : none;
+    display     : block;
     flex-shrink : 0;
     width       : var(--pt-indent-width);
     align-self  : stretch;
