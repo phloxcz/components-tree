@@ -995,21 +995,44 @@
     }
 
     function initAll(root) {
-        (root || document).querySelectorAll('.phlox-tree').forEach(initTree);
+        root = root || document;
+        if (root instanceof Element && root.matches('.phlox-tree')) initTree(root);
+        root.querySelectorAll('.phlox-tree').forEach(initTree);
+    }
+
+    // ── Naja ──────────────────────────────────────────────────────────────────
+    //
+    // Trees in a replaced snippet are initialised, the selection follows the
+    // URL after back / forward — the same way components-grid hooks in:
+    //
+    //   import naja from 'naja';
+    //   naja.initialize();
+    //   window.PhloxTree.hookNaja(naja);
+    //
+    // Hooked automatically when window.naja exists on DOMContentLoaded.
+
+    let hookedNaja = null;
+    let popstateHooked = false;
+
+    function hookNaja(naja) {
+        if (!naja || hookedNaja === naja) return;
+        hookedNaja = naja;
+        naja.snippetHandler.addEventListener('afterUpdate', ({ detail }) => {
+            if (detail.snippet instanceof Element) initAll(detail.snippet);
+        });
+        // fires after naja has applied the restored state, so the tree is in place
+        naja.historyHandler.addEventListener('restoreState', () => reselectFromUrl());
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         initAll();
 
-        // Hook into naja's restoreState if available — fires after naja has applied
-        // its DOM snapshot, so the tree is guaranteed to be in the correct state.
-        // Fallback: popstate + setTimeout(0) per MDN recommendation (document may
-        // not yet reflect the new state when popstate fires synchronously).
         if (window.naja?.historyHandler) {
-            window.naja.historyHandler.addEventListener('restoreState', () => {
-                reselectFromUrl();
-            });
-        } else {
+            hookNaja(window.naja);
+        } else if (!popstateHooked) {
+            // without naja: popstate + setTimeout(0) per MDN recommendation (document
+            // may not yet reflect the new state when popstate fires synchronously)
+            popstateHooked = true;
             window.addEventListener('popstate', () => {
                 setTimeout(reselectFromUrl, 0);
             });
@@ -1035,6 +1058,7 @@
     const PhloxTree = {
         init: initAll,
         initTree,
+        hookNaja,
         expand(treeId, nodeId) {
             const tree = document.getElementById(treeId);
             const item = tree?.querySelector(`.pt-item[data-id="${nodeId}"]`);
@@ -1056,7 +1080,10 @@
         },
     };
 
-    if (typeof module !== 'undefined' && module.exports) module.exports = PhloxTree;
-    else global.PhloxTree = PhloxTree;
+    // Always on window: bundlers (Vite/Rollup) may rename a free `module` to
+    // another module's object — the API would end up in someone else's exports.
+    // CommonJS export only outside a browser (tests in Node).
+    global.PhloxTree = PhloxTree;
+    if (typeof window === 'undefined' && typeof module === 'object' && module && module.exports) module.exports = PhloxTree;
 
 }(typeof window !== 'undefined' ? window : this));

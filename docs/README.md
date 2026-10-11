@@ -181,6 +181,8 @@ Pro správné obnovení výběru při použití tlačítek zpět/vpřed prohlí�
 
 Vše za `{id}` je ignorováno – jeden pattern pokryje všechny sub-stránky uzlu.
 
+S Naja se obnova výběru napojí přes `PhloxTree.hookNaja(naja)` (automaticky, je-li `window.naja` k dispozici při `DOMContentLoaded`) — viz [JavaScript API](#javascript-api).
+
 > **Pozor:** `setUrlParam` / `setUrlPattern` a `setSelectedNode` se nevylučují. `setSelectedNode` vyhraje při prvním načtení (F5, sdílené URL). URL metody slouží výhradně pro back/forward navigaci.
 
 ### Drag & Drop
@@ -318,12 +320,17 @@ document.addEventListener('pt:move', e => {
 
 ## JavaScript API
 
-Globální objekt `PhloxTree` (nebo CommonJS export):
+Globální objekt `window.PhloxTree` — v prohlížeči vždy, i když je skript součástí bundlu (Vite/Rollup); CommonJS export jen mimo prohlížeč:
 
 ```js
 // Ruční inicializace (při dynamickém vložení stromu do DOM)
 PhloxTree.init();
+PhloxTree.init(containerElement);   // jen stromy uvnitř kontejneru (i kontejner sám)
 PhloxTree.initTree(document.getElementById('phlox-tree-myTree'));
+
+// Naja: stromy v nahrazeném snippetu se inicializují, výběr se po zpět/vpřed
+// obnoví z URL (ve stejném duchu jako components-grid)
+PhloxTree.hookNaja(naja);
 
 // Programatické rozbalení / sbalení uzlu
 PhloxTree.expand('phlox-tree-myTree', '42');
