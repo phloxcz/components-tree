@@ -302,6 +302,15 @@ document.addEventListener('pt:select', e => {
 });
 ```
 
+### `pt:ready`
+
+Strom je po inicializaci hotový — obnovené rozbalené uzly (včetně načtení potomků) a vybraný výchozí uzel. Totéž jako promise `tree.ptReady`. Hodí se např. pro připravení stromu mimo obrazovku a jeho zobrazení až rozbaleného:
+
+```js
+tree.addEventListener('pt:ready', () => { /* strom vypadá, jak má */ });
+await tree.ptReady;
+```
+
 ### `pt:move`
 
 Spuštěn po úspěšném přetažení uzlu (před serverovým voláním, pokud je nastaveno `setMoveUrl`).

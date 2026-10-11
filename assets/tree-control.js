@@ -987,11 +987,16 @@
         // Resolve which node to select: data-selected-node (PHP) or URL param
         const selectId = tree.dataset.selectedNode || getIdFromUrl(tree);
 
-        restoreExpandedState(tree)
+        // tree.ptReady / pt:ready — the expanded nodes are restored (children
+        // loaded) and the initial node selected: the tree looks as it will
+        tree.ptReady = restoreExpandedState(tree)
             .then(() => {
                 if (selectId) return selectInitialNode(tree, selectId);
             })
-            .catch(() => {});
+            .catch(() => {})
+            .then(() => {
+                tree.dispatchEvent(new CustomEvent('pt:ready', { bubbles: true }));
+            });
     }
 
     function initAll(root) {
