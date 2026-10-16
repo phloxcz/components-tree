@@ -217,8 +217,9 @@ a.pt-label:hover { text-decoration: underline; }
     font-size   : 1em;
 }
 
-/* ── Checkbox ──────────────────────────────────────────────────────────── */
-.pt-checkbox {
+/* ── Pick control (setSelectable) ─────────────────────────────────────── */
+.pt-checkbox,
+.pt-radio {
     margin      : 0 6px 0 2px;
     flex-shrink : 0;
     cursor      : pointer;

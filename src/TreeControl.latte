@@ -12,6 +12,8 @@
     data-drag-drop="{$dragAndDrop ? 'true' : 'false'}"
     data-animation="{$animation ? 'true' : 'false'}"
     data-lazy="{$lazyLoad ? 'true' : 'false'}"
+    data-selectable="{$selectable}"
+    {if $selectable !== 'none'}data-input-name="{$inputName}" data-checked-nodes="{$checkedNodesJson}"{/if}
     data-branch-icon="{$branchIcon}"
     data-leaf-icon="{$leafIcon}"
     data-root-icon="{$rootIcon}"
@@ -52,7 +54,7 @@
     <div class="pt-row" {$dragAndDrop && !$node['disabled'] ? 'draggable="true"' : ''|noescape}>
 
         {foreach $node['ancestorFlags'] as $idx => $ancestorIsLast}
-            {if !$loop->first}<span class="pt-indent" data-has-line="{$ancestorIsLast ? '0' : '1'}" aria-hidden="true"></span>{/if}
+            {if $idx !== 0}<span class="pt-indent" data-has-line="{$ancestorIsLast ? '0' : '1'}" aria-hidden="true"></span>{/if}
         {/foreach}
 
         <span class="pt-connector{$node['isLast'] ? ' pt-connector--last' : ''}" aria-hidden="true" n:if="$depth > 0"></span>
@@ -70,23 +72,27 @@
         </button>
         <span class="pt-toggle pt-toggle--leaf" n:else></span>
 
-        <input class="pt-checkbox" type="checkbox" n:if="$checkboxes" data-id="{$node['id']}" />
+        <input n:if="$selectable === 'multiple'" class="pt-pick pt-checkbox" type="checkbox"
+            name="{$inputName}[]" value="{$node['id']}"
+            n:attr="checked: in_array((string) $node['id'], $checkedNodes, true) ? true : null, disabled: $node['disabled'] ? true : null">
+        <input n:elseif="$selectable === 'single'" class="pt-pick pt-radio" type="radio"
+            name="{$inputName}" value="{$node['id']}"
+            n:attr="checked: in_array((string) $node['id'], $checkedNodes, true) ? true : null, disabled: $node['disabled'] ? true : null">
 
         <span class="pt-icon" n:if="$node['icon']">{$node['icon']|noescape}</span>
 
         <span class="pt-label">{$node['label']}</span>
     </div>
 
-    {if $node['expanded']}
+    {if $node['hasChildren']}
         {if $lazyLoad}
-            <div class="pt-children" data-loaded="false" style="display:block"></div>
+            <div class="pt-children" data-loaded="false" style="{$node['expanded'] ? 'display:block' : 'display:none'}"></div>
         {else}
-            <div class="pt-children" n:if="$node['children']">
+            {* non-lazy: buildTree() always fills $node['children'], expanded or not — nothing to fetch, ever *}
+            <div class="pt-children" data-loaded="true" style="{$node['expanded'] ? 'display:block' : 'display:none'}">
                 {include #nodeList, nodes: $node['children'], depth: $depth + 1}
             </div>
         {/if}
-    {elseif $node['hasChildren']}
-        <div class="pt-children" style="display:none" data-loaded="false"></div>
     {/if}
 </li>
 {/define}

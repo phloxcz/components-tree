@@ -14,6 +14,7 @@ Nette Framework Tree UI component. Lazy AJAX loading, drag & drop s automatický
   - [Ikony](#ikony)
   - [Chování](#chování)
   - [Výběr uzlu](#výběr-uzlu)
+  - [Picker](#picker)
   - [Navigace zpět/vpřed](#navigace-zpětvpřed)
   - [Drag & Drop](#drag--drop)
   - [Téma a stylování](#téma-a-stylování)
@@ -130,11 +131,12 @@ Ikony se předávají jako libovolné HTML nebo SVG. Priority:
 
 | Metoda | Výchozí | Popis |
 |--------|---------|-------|
-| `setLazyLoad(bool)` | `true` | Načítání dětí až při rozbalení |
+| `setLazyLoad(bool)` | `true` | Načítání dětí až při rozbalení. `false` = celý podstrom je v HTML hned (žádný signál se nikdy nevolá) — hodí se pro menší stromy, typicky picker (viz [Picker](#picker)) |
 | `setAnimation(bool)` | `true` | Animace rozbalování/sbalování |
 | `setTreeLines(bool)` | `false` | Klasické I/L/T spojovací čáry + rámeček kolem expand tlačítka |
 | `setDragAndDrop(bool)` | `false` | Přetahování uzlů |
-| `setCheckboxes(bool)` | `false` | Zobrazení checkboxů |
+| `setSelectable(string, string)` | `SELECT_NONE` | Checkbox/radio picker, viz [Picker](#picker) |
+| `setCheckedNodes(array)` | `[]` | Které uzly začnou zaškrtnuté/vybrané (picker) |
 | `setCssClass(string)` | `''` | Extra CSS třída na kořenový `<div>` |
 | `setQueryModifier(Closure)` | `null` | Úprava dotazu před načtením uzlů |
 
@@ -184,6 +186,46 @@ Vše za `{id}` je ignorováno – jeden pattern pokryje všechny sub-stránky uz
 S Naja se obnova výběru napojí přes `PhloxTree.hookNaja(naja)` (automaticky, je-li `window.naja` k dispozici při `DOMContentLoaded`) — viz [JavaScript API](#javascript-api).
 
 > **Pozor:** `setUrlParam` / `setUrlPattern` a `setSelectedNode` se nevylučují. `setSelectedNode` vyhraje při prvním načtení (F5, sdílené URL). URL metody slouží výhradně pro back/forward navigaci.
+
+### Picker
+
+`setSelectedNode` highlightuje jeden uzel pro navigaci ("na kterém uzlu právě jsem"). `setSelectable` je něco jiného — dá stromu formulářovou hodnotu: na každý uzel přidá `<input type="radio">` nebo `<input type="checkbox">`, obě jsou to obyčejné HTML form controls, žádný vlastní JS event ani serializace. Vložíte strom do vlastního `<form>` a hodnotu přečtete úplně běžně.
+
+```php
+->setSelectable(TreeControl::SELECT_MULTIPLE, 'pageIds')  // <input type="checkbox" name="pageIds[]" value="…">
+->setCheckedNodes($previouslyPickedIds)                   // které z nich mají začít zaškrtnuté
+```
+
+```php
+->setSelectable(TreeControl::SELECT_SINGLE, 'parentId')   // <input type="radio" name="parentId" value="…">
+```
+
+V picker módu klik kamkoliv na řádek (ne jen na samotný checkbox/radio) přepne hodnotu — řádek už nespouští `pt:select`/navigaci. Checkboxy jsou vzájemně nezávislé, žádné zaškrtnutí rodiče neimplikuje zaškrtnutí potomků (a naopak) — pro "celou podstránku" vyberte rodiče samostatně (např. druhým stromem nebo vlastním polem).
+
+`setCheckedNodes` zajistí i to, že se na začátku rozbalí předci každého zaškrtnutého uzlu, aby byl vidět — stejně jako to `setSelectedNode` dělá pro jeden zvýrazněný uzel. Oba mechanismy jsou nezávislé a kombinovatelné.
+
+```php
+protected function createComponentPageTree(): TreeControl
+{
+    return $this->treeFactory
+        ->create($this->db->table('post'))
+        ->setLabelColumn('title')
+        ->setSelectable(TreeControl::SELECT_MULTIPLE, 'pageIds')
+        ->setCheckedNodes($this->widget->getSelectedPageIds());
+}
+```
+
+```latte
+<form n:name=settingsForm>
+    {control pageTree}
+    {input save}
+</form>
+```
+
+```php
+$form->addCheckboxList('pageIds', 'Stránky', $this->posts->pageOptions($siteId));
+// $form['pageIds']->getValue() po submitu — stejně jako kdyby ho vykreslilo Nette samo
+```
 
 ### Drag & Drop
 
@@ -288,7 +330,7 @@ Oba eventy bublají (`bubbles: true`) ze stromu nahoru, takže stačí jeden lis
 
 ### `pt:select`
 
-Spuštěn po kliknutí na uzel (nebo po výběru klávesnicí).
+Spuštěn po kliknutí na uzel (nebo po výběru klávesnicí). Nespouští se v picker módu (`setSelectable`) — tam klik na řádek přepíná checkbox/radio, ne výběr/navigaci.
 
 ```js
 document.addEventListener('pt:select', e => {

@@ -58,6 +58,20 @@
         return tree.dataset.animation === 'false' ? 0 : 180;
     }
 
+    // ── Picker (setSelectable) ───────────────────────────────────────────────
+    //
+    // data-checked-nodes is a JSON array of ids, parsed once per tree — same
+    // set used both for SSR-rendered nodes (checked server-side already) and
+    // for nodes rendered client-side by renderNode() (lazy load / restore).
+
+    function getCheckedIds(tree) {
+        if (!tree._ptCheckedIds) {
+            try { tree._ptCheckedIds = new Set(JSON.parse(tree.dataset.checkedNodes || '[]')); }
+            catch { tree._ptCheckedIds = new Set(); }
+        }
+        return tree._ptCheckedIds;
+    }
+
     // ── Theme ─────────────────────────────────────────────────────────────────
     //
     // data-theme attribute contains a JSON object with class overrides.
@@ -242,6 +256,19 @@
             row.appendChild(sp);
         }
 
+        // Pick control (radio/checkbox) — mirrors TreeControl.latte's #node
+        const selectable = tree.dataset.selectable;
+        if (selectable === 'single' || selectable === 'multiple') {
+            const input = document.createElement('input');
+            input.type      = selectable === 'multiple' ? 'checkbox' : 'radio';
+            input.className = 'pt-pick ' + (selectable === 'multiple' ? 'pt-checkbox' : 'pt-radio');
+            input.name      = selectable === 'multiple' ? tree.dataset.inputName + '[]' : tree.dataset.inputName;
+            input.value     = node.id;
+            if (getCheckedIds(tree).has(String(node.id))) input.checked = true;
+            if (node.disabled) input.disabled = true;
+            row.appendChild(input);
+        }
+
         // Icon (resolved by server for SSR; mirrored here for lazy-loaded nodes)
         const rootIcon   = tree.dataset.rootIcon;
         const branchIcon = tree.dataset.branchIcon;
@@ -367,6 +394,17 @@
         const ids = lsGetExpanded(tree);
         if (!ids.size) return;
 
+        if (tree.dataset.lazy !== 'true') {
+            // non-lazy: buildTree() already embedded every node's children
+            // (see TreeControl::buildTree()) — nothing to fetch, just re-apply
+            // the expanded look
+            for (const id of ids) {
+                const item = tree.querySelector(`.pt-item[data-id="${id}"]`);
+                if (item && !item.classList.contains('is-expanded')) await expandNode(tree, item);
+            }
+            return;
+        }
+
         const batchUrl = tree.dataset.signalLoadChildrenBatch;
         if (!batchUrl) {
             // Fallback: sequential expand (old behaviour) if signal not available
@@ -488,13 +526,9 @@
         return null;
     }
 
-    async function selectInitialNode(tree, id) {
-        let item = tree.querySelector(`.pt-item[data-id="${id}"]`);
-        if (item) {
-            applySelection(tree, item);
-            item.scrollIntoView({ block: 'nearest' });
-            return;
-        }
+    /** Expands every ancestor of node $id (fetched via the ancestorPath signal) so it becomes visible. */
+    async function expandAncestorsOf(tree, id) {
+        if (tree.querySelector(`.pt-item[data-id="${id}"]`)) return;
 
         const pathUrl = tree.dataset.signalAncestorPath;
         if (!pathUrl) return;
@@ -517,12 +551,22 @@
                 await expandNode(tree, ancestorItem);
             }
         }
+    }
 
-        item = tree.querySelector(`.pt-item[data-id="${id}"]`);
+    async function selectInitialNode(tree, id) {
+        await expandAncestorsOf(tree, id);
+        const item = tree.querySelector(`.pt-item[data-id="${id}"]`);
         if (item) {
             applySelection(tree, item);
             item.scrollIntoView({ block: 'nearest' });
         }
+    }
+
+    /** Picker mode (setSelectable): reveals every pre-checked node, same as selectInitialNode does for one. */
+    async function revealCheckedNodes(tree) {
+        const ids = getCheckedIds(tree);
+        if (!ids.size) return;
+        await Promise.all([...ids].map(id => expandAncestorsOf(tree, id)));
     }
 
     // ── Drag & Drop ───────────────────────────────────────────────────────────
@@ -956,7 +1000,25 @@
                 item.classList.contains('is-expanded')
                     ? collapseNode(tree, item)
                     : expandNode(tree, item);
-            } else if (e.target.closest('.pt-row')) {
+                return;
+            }
+
+            // Picker mode (setSelectable): the row never navigates/selects —
+            // clicking it (not just the control itself) toggles the pick
+            // control instead, for a bigger, more forgiving hit target.
+            const pick = item.querySelector(':scope > .pt-row > .pt-pick');
+            if (pick) {
+                if (pick.disabled) return;
+                if (e.target !== pick && e.target.closest('.pt-row')) {
+                    e.preventDefault();
+                    if (pick.type === 'checkbox') pick.checked = !pick.checked;
+                    else pick.checked = true;
+                    pick.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                return;
+            }
+
+            if (e.target.closest('.pt-row')) {
                 e.preventDefault();
                 selectNode(tree, item);
             }
@@ -990,6 +1052,7 @@
         // tree.ptReady / pt:ready — the expanded nodes are restored (children
         // loaded) and the initial node selected: the tree looks as it will
         tree.ptReady = restoreExpandedState(tree)
+            .then(() => revealCheckedNodes(tree))
             .then(() => {
                 if (selectId) return selectInitialNode(tree, selectId);
             })

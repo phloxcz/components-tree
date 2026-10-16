@@ -15,6 +15,12 @@ class TreeControl extends Control
     public const THEME_DEFAULT   = 'default';
     public const THEME_BOOTSTRAP = 'bootstrap';
 
+    // ── Selection modes (see setSelectable()) ───────────────────────────────────
+
+    public const SELECT_NONE     = 'none';
+    public const SELECT_SINGLE   = 'single';
+    public const SELECT_MULTIPLE = 'multiple';
+
     // ── Persistent state ──────────────────────────────────────────────────────
 
     #[Persistent]
@@ -36,11 +42,15 @@ class TreeControl extends Control
     private array   $dataColumns          = [];
 
     private bool    $dragAndDrop  = false;
-    private bool    $checkboxes   = false;
     private bool    $lazyLoad     = true;
     private bool    $animation    = true;
     private bool    $treeLines    = false;
     private string  $cssClass     = '';
+
+    private string $selectable = self::SELECT_NONE;
+    private string $inputName  = '';
+    /** @var list<string> */
+    private array $checkedNodes = [];
 
     private int|string|null $selectedNode = null;
     private ?string $urlParam             = null;
@@ -80,7 +90,6 @@ class TreeControl extends Control
     public function setDisabledColumn(string $col): static     { $this->disabledColumn = $col; return $this; }
     public function setDataColumns(array $cols): static        { $this->dataColumns = $cols; return $this; }
     public function setDragAndDrop(bool $v = true): static     { $this->dragAndDrop = $v; return $this; }
-    public function setCheckboxes(bool $v = true): static      { $this->checkboxes = $v; return $this; }
     public function setLazyLoad(bool $v = true): static        { $this->lazyLoad = $v; return $this; }
     public function setAnimation(bool $v = true): static       { $this->animation = $v; return $this; }
     public function setCssClass(string $cls): static           { $this->cssClass = $cls; return $this; }
@@ -130,6 +139,47 @@ class TreeControl extends Control
     public function setTreeLines(bool $enabled = true): static
     {
         $this->treeLines = $enabled;
+        return $this;
+    }
+
+    /**
+     * Turns every node into a pickable form control — a plain native
+     * <input type="radio"> (SELECT_SINGLE, all sharing $inputName, so the
+     * browser enforces "just one") or <input type="checkbox"> (SELECT_MULTIPLE,
+     * named "{$inputName}[]"), independent of each other (no parent→children
+     * cascade — nest a tree inside another tree if you need "whole subtree").
+     * Nest the tree inside your own <form> and read the submitted value(s) the
+     * normal way (e.g. Nette Forms' addRadioList()/addCheckboxList() under the
+     * same name) — no custom JS event or serialization needed.
+     *
+     * In this mode, clicking anywhere on a row (not just the control) toggles
+     * it, and the row no longer fires pt:select / click-to-navigate.
+     */
+    public function setSelectable(string $mode, string $inputName): static
+    {
+        $this->selectable = $mode;
+        $this->inputName  = $inputName;
+        return $this;
+    }
+
+    /** @deprecated use setSelectable(self::SELECT_MULTIPLE, $inputName) — this gives the inputs no name to submit under */
+    public function setCheckboxes(bool $v = true): static
+    {
+        $this->selectable = $v ? self::SELECT_MULTIPLE : self::SELECT_NONE;
+        return $this;
+    }
+
+    /**
+     * Which nodes start picked — e.g. a form's previously saved page IDs.
+     * Ancestors of each are expanded on load so the node is visible, same as
+     * setSelectedNode() does for the single navigational highlight (the two
+     * are independent: this is the picker's value, that one is "which node is
+     * the active view right now").
+     * @param list<int|string> $ids
+     */
+    public function setCheckedNodes(array $ids): static
+    {
+        $this->checkedNodes = array_map('strval', $ids);
         return $this;
     }
 
@@ -412,12 +462,13 @@ class TreeControl extends Control
             $item['ancestorFlags'] = $ancestorFlags;
             $item['children']      = [];
 
-            if ($isExp && $item['hasChildren']) {
-                if ($this->lazyLoad) {
-                    $item['lazyLoaded'] = false;
-                } else {
-                    $item['children'] = $this->buildTree($id, [...$ancestorFlags, $isLast]);
-                }
+            if ($item['hasChildren'] && !$this->lazyLoad) {
+                // non-lazy: the whole subtree is embedded upfront regardless of
+                // expand state, so a collapsed branch already has something to
+                // reveal — expanding it never needs a signal round-trip
+                $item['children'] = $this->buildTree($id, [...$ancestorFlags, $isLast]);
+            } elseif ($isExp && $item['hasChildren']) {
+                $item['lazyLoaded'] = false;
             }
 
             $result[] = $item;
@@ -468,7 +519,10 @@ class TreeControl extends Control
 
         $template->nodes       = $this->buildTree();
         $template->dragAndDrop = $this->dragAndDrop;
-        $template->checkboxes  = $this->checkboxes;
+        $template->selectable      = $this->selectable;
+        $template->inputName       = $this->inputName;
+        $template->checkedNodes    = $this->checkedNodes;
+        $template->checkedNodesJson = json_encode($this->checkedNodes, JSON_THROW_ON_ERROR);
         $template->lazyLoad    = $this->lazyLoad;
         $template->animation   = $this->animation;
         $template->treeLines   = $this->treeLines;
